@@ -1,0 +1,65 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{cite}
+
+\title{Preliminary Proposal: Blueprint Reconstruction and Feature Discovery}
+
+\author{
+    \IEEEauthorblockN{Nikita Zagainov, Nikita Tsukanov, Said Kadirov, Dmitry Tetkin}
+    \IEEEauthorblockA{
+        \textit{Innopolis University}\\
+        Kazan, Russia \\
+        \{n.zagainov, n.tsukanov, s.kadirov, d.tetkin\}@innopolis.university
+    }
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+    This project aims to reconstruct blueprint-style sketches from 3D models and extract semantic information such as edges, holes, fillets, chamfers, and symmetries. The approach combines machine learning with geometry processing to generate 2D blueprint sketches from 3D geometries.
+\end{abstract}
+
+\begin{IEEEkeywords}
+    Blueprint reconstruction, feature discovery, machine learning, 3D models, CAD.
+\end{IEEEkeywords}
+
+\section{Project Idea}
+\textbf{Goal:} Reconstruct clean, blueprint-like sketches from 3D models and derive semantic information such as edges, holes, fillets, chamfers, and symmetries.
+
+\textbf{Importance:} This approach accelerates reverse engineering and technical documentation processes, reducing manual drafting efforts and aiding downstream CAD/CAM and inspection steps by providing structured, machine-readable features.
+
+\textbf{Target Users:} CAD engineers, mechanical designers, architects, technical illustrators, and education/research teams dealing with legacy parts or incomplete drawings.
+
+\section{Technique/Method}
+We will employ a \textbf{diffusion model} for converting sketches into surface normal maps. Additionally, a \textbf{feature-understanding model} will detect blueprint features and infer design principles.
+
+\section{Dataset Explanation}
+The project utilizes a \textbf{synthetic dataset} containing pairs of C++-generated sketches and their corresponding normal maps, generated using our \texttt{sketch-tool}. The dataset will be split into training, validation, and test sets with standard augmentations to improve model robustness.
+
+\textbf{Link to the dataset:} \url{https://github.com/touch-topnotch/sketch-tool}
+
+\section{Timeline with Individual Tasks}
+\begin{itemize}
+    \item \textbf{Nikita Tsukanov}: Research state-of-the-art methods, select models, and design methodology (Sep 2025)
+    \item \textbf{Nikita Zagainov}: Model training, implementation of the diffusion model (Sep-Oct 2025)
+    \item \textbf{Tetkin Dmitry}: Develop C++ tools for dataset generation (Sep 2025)
+    \item \textbf{Said Kadirov}: Data preprocessing, dataset curation, pipeline integration (Sep 2025)
+\end{itemize}
+
+\section{References}
+\begin{enumerate}
+    \item Rombach, R., et al. "High-Resolution Image Synthesis with Latent Diffusion Models," CVPR, 2022.
+    \item Zhang, L., et al. "Adding Conditional Control to Text-to-Image Diffusion Models," 2023.
+    \item Saharia, C., et al. "Palette: Image-to-Image Diffusion Models," SIGGRAPH, 2022.
+    \item Isola, P., et al. "Image-to-Image Translation with Conditional Adversarial Networks," CVPR, 2017.
+    \item Canny, J. "A Computational Approach to Edge Detection," IEEE TPAMI, 1986.
+\end{enumerate}
+
+\end{document}
