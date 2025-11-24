@@ -60,6 +60,36 @@ padding preserves silhouette proportions for later contour fitting. Figure~\ref{
 qualitative improvement when switching from raw raster projections to the filtered edge renderings used for
 downstream primitive fitting.
 
+\paragraph{Pseudocode summary.} The key helper routines (cells 5--56 of \repo{experiments/find\_boundings.ipynb})
+are reproduced below for portability:
+
+\begin{verbatim}
+read_obj_vertices_faces(path):
+    vertices, faces = [], []
+    for each line in OBJ file:
+        if line starts with "v": append vertex (x, y, z)
+        elif line starts with "f": collect face indices (1-indexed)
+    return np.asarray(vertices), faces
+
+project_plane(vertices, plane):
+    idx_map = {"xy": (0, 1), "xz": (0, 2), "zy": (2, 1)}
+    return vertices[:, idx_map[plane]]
+
+build_edge_indices(faces):
+    edges = set()
+    for each face:
+        for consecutive pair (a, b):
+            edges.add(tuple(sorted((a, b))))
+    return list(edges)
+
+coords_to_pixels(coords, width=1500, height=1500, padding=0.05):
+    compute min/max spans, scale to canvas with padding
+    center coordinates and flip Y axis for image convention
+    return integer pixel array
+\end{verbatim}
+
+These helpers feed a loop that renders tri-planar canvases for every OBJ mesh and saves them under \repo{experiments/*.png}.
+
 \begin{figure}[ht]
     \centering
     \begin{subfigure}{0.48\linewidth}
