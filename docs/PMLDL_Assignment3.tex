@@ -1,0 +1,136 @@
+% D1.3-style interim report (Update) for Sketch-Vision
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage[singlelinecheck=false,justification=centering]{caption}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\hypersetup{colorlinks=true, linkcolor=black, urlcolor=blue, citecolor=black}
+
+\title{Sketch-Vision: Primitive Detection and Program Reconstruction\\\large D1.3 Update Report}
+\author{Team JAXAXAX \\[4pt]
+  Nikita Zagainov (\href{mailto:n.zagainov@innopolis.university}{n.zagainov@innopolis.university}) \\
+  Nikita Tsukanov (\href{mailto:n.tsukanov@innopolis.university}{n.tsukanov@innopolis.university}) \\
+  Tetkin Dmitry (\href{mailto:d.tetkin@innopolis.university}{d.tetkin@innopolis.university})
+}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This update documents repository changes since the previous interim report: expanded primitive types (arrows, text tokens), a simple program serialization within annotations, OCR utilities, sequence-level evaluation, and a minimal detector training baseline. We also outline near-term improvements and longer-term extensions.
+\end{abstract}
+
+\section{Repository}
+\url{https://github.com/V1adych/sketch-vision-pmldl}
+
+\section{Overview}
+We extend raster-to-program modeling to hand-drawn sketches with engineering annotations. From an input image, we produce a set of detected primitives (geometry and annotation tokens) and a compact symbolic ``program'' suitable for downstream CAD or sequence modeling.
+
+
+\section{Implemented Changes}
+\subsection{Expanded Synthetic Generator}
+We extended \texttt{preprocessing/generate\_synthetic.py} with two new primitive types: \texttt{arrow} and \texttt{text}. Annotations now include:
+\begin{itemize}[leftmargin=*]
+  \item a \texttt{program} field: serialized sequence of primitives suitable for encoder--decoder evaluation;
+  \item an \texttt{ocr\_gt} list: ground-truth tokens for text primitives.
+\end{itemize}
+
+\subsection{Visualization}
+\texttt{preprocessing/visualize\_annotations.py} now renders the added types with distinct colors and labels for quick inspection.
+
+\subsection{OCR Utility}
+\texttt{preprocessing/extract\_text\_tokens.py} optionally integrates Tesseract OCR to extract tokens from images and stores them as \texttt{ocr\_pred} alongside annotations.
+
+\subsection{Metrics and Evaluation}
+\texttt{evaluation/metrics.py} includes precision/recall/F1 and sequence helpers (exact match, char accuracy). \texttt{evaluation/sequence\_metrics.py} evaluates predicted programs (TSV/CSV: \texttt{name\textbackslash t program}) against ground truth.
+
+\subsection{Detector Baseline}
+\texttt{scripts/train\_detector.py} provides a minimal Faster R-CNN training loop (torchvision) for the synthetic dataset.
+
+\section{Quickstart (Updated)}
+\begin{verbatim}
+python preprocessing/generate_synthetic.py --output-dir dataset/synthetic --num-samples 100
+python preprocessing/visualize_annotations.py \
+  --images-dir dataset/synthetic/images \
+  --annotations-dir dataset/synthetic/annotations \
+  --name sketch_00010 --output dataset/synthetic/vis
+python evaluation/evaluate_synthetic.py \
+  --annotations-dir dataset/synthetic/annotations \
+  --splits dataset/synthetic/splits/train.txt
+
+# OCR (optional; requires Tesseract installed)
+python preprocessing/extract_text_tokens.py \
+  --images-dir dataset/synthetic/images \
+  --annotations-dir dataset/synthetic/annotations
+
+# Train simple detector baseline
+python scripts/train_detector.py --data-root dataset/synthetic --epochs 1 --batch-size 2
+
+# Evaluate sequence-level accuracy (TSV: name<TAB>program)
+python evaluation/sequence_metrics.py \
+  --annotations-dir dataset/synthetic/annotations \
+  --splits dataset/synthetic/splits/test.txt \
+  --predictions predictions.tsv
+\end{verbatim}
+
+\section{Data Visualization}
+We include dataset summary plots generated from the synthetic annotations (see figures in \texttt{docs/figs/}). The visualization tool overlays bounding boxes and labels directly on images, now including arrows and text tokens.
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.85\linewidth]{figs/primitive_types.png}
+  \caption{Distribution of primitive types in the dataset. Shows the frequency of each type (rectangle, circle, line, arrow, text) across all annotations.}\label{fig:types}
+\end{figure}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.85\linewidth]{figs/primitives_per_image.png}
+  \caption{Histogram of primitive counts per image. Most images contain 3--7 primitives, with a typical range of 2--5 primitives per sketch.}\label{fig:counts}
+\end{figure}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.85\linewidth]{figs/bbox_area_hist.png}
+  \caption{Bounding-box area distribution normalized by image area. Most primitives occupy a small fraction of the image (typically 0.1--5\% of total area).}\label{fig:areas}
+\end{figure}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.85\linewidth]{figs/bbox_aspect_ratio.png}
+  \caption{Bounding-box aspect ratio distribution (width/height). Shows the shape diversity of primitives, with values near 1.0 indicating square-like shapes and higher values indicating elongated objects (e.g., arrows, lines).}\label{fig:aspect}
+\end{figure}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.85\linewidth]{figs/ocr_token_lengths.png}
+  \caption{OCR token length distribution (characters per token). Text primitives in the dataset typically contain 1--3 characters, reflecting common dimension labels and numeric values.}\label{fig:ocr_len}
+\end{figure}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.85\linewidth]{figs/program_statements.png}
+  \caption{Program statement count per image. The number of statements in the serialized program representation correlates with the number of detected primitives, typically ranging from 2--6 statements per image.}\label{fig:prog_stmt}
+\end{figure}
+
+\section{Future Improvements}
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Richer primitives}: hatching, construction lines, dimension arrows with explicit endpoints, symbols.
+  \item \textbf{OCR robustness}: trainable OCR head or integration with lightweight OCR tailored to sketch digits and units; post-processing with language priors (e.g., ranges, units, tolerances).
+  \item \textbf{Detector baselines}: DETR/Deformable DETR variants; add class-agnostic NMS and better augmentation.
+  \item \textbf{Matching and metrics}: Hungarian matching over sets of primitives with type/value constraints; edit-distance metrics for program strings.
+  \item \textbf{Encoder--decoder}: integrate a sequence model (ViT encoder + small LM) for end-to-end program prediction and report sequence exact match on synthetic and real sketches.
+  \item \textbf{Domain adaptation}: noise models and fine-tuning on photographed hand sketches; semi-supervised learning with pseudo-labels.
+  \item \textbf{Tooling}: export to common CAD sketch formats or intermediate DSLs; visualization dashboards.
+\end{itemize}
+
+\section{Reproducibility Notes}
+Dependencies are listed in \texttt{requirements.txt}. For detector training, install compatible \texttt{torch} and \texttt{torchvision}. The repository includes deterministic seeds for synthetic data generation.
+
+\end{document}
+
+

@@ -1,0 +1,114 @@
+% D1.2-style interim report for Sketch-Vision
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage[singlelinecheck=false,justification=centering]{caption}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\hypersetup{colorlinks=true, linkcolor=black, urlcolor=blue, citecolor=black}
+
+\title{Sketch-Vision: Primitive Detection and Program Reconstruction\\\large D1.2 Progress Report}
+\author{Team JAXAXAX \\[4pt]
+  Nikita Zagainov (\href{mailto:n.zagainov@innopolis.university}{n.zagainov@innopolis.university}) \\
+  Nikita Tsukanov (\href{mailto:n.tsukanov@innopolis.university}{n.tsukanov@innopolis.university}) \\
+  Said Kadirov (\href{mailto:s.kadirov@innopolis.university}{s.kadirov@innopolis.university}) \\
+  Tetkin Dmitry (\href{mailto:d.tetkin@innopolis.university}{d.tetkin@innopolis.university})
+}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We extend raster-to-program modeling to hand-drawn sketches with engineering annotations. This interim deliverable documents (i) a lightweight synthetic dataset generator with JSON annotations, (ii) visualization and evaluation utilities, and (iii) updated repository documentation. We outline alignment with CAD2Program-style VLMs and next steps.
+\end{abstract}
+
+\section{Repository}
+\url{https://github.com/V1adych/sketch-vision-pmldl}
+
+\section{Overview}
+Our goal is to detect digits, arrows, dimensions, radii, and geometric primitives in noisy sketches, producing a structured representation suitable for downstream CAD. We follow the encoder--decoder paradigm (ViT encoder + LM decoder) summarized in our prior notes (see \texttt{docs/sketch-vision-eng.pdf}).
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.9\linewidth]{internvl.png}
+  \caption{High-level multimodal architecture (reference figure in repo).}\label{fig:internvl}
+\end{figure}
+
+\section{Repository Updates in D1.2}
+\subsection{Synthetic Dataset Generator}
+We added \texttt{preprocessing/generate\_synthetic.py} that renders rectangles, circles, and line segments with basic dimension labels and produces aligned JSON annotations. It also writes train/val/test splits.
+
+\subsection{Visualization and Evaluation}
+\texttt{preprocessing/visualize\_annotations.py} overlays bounding boxes and labels on top of images. \texttt{evaluation/metrics.py} provides IoU; \texttt{evaluation/evaluate\_synthetic.py} prints simple corpus stats per split.
+
+\subsection{Documentation}
+\texttt{README.md} now includes a Quickstart showing how to generate a small dataset, visualize a sample, and get stats.
+
+\section{Quickstart (Reproducibility)}
+\begin{verbatim}
+python preprocessing/generate_synthetic.py --output-dir dataset/synthetic --num-samples 100
+python preprocessing/visualize_annotations.py \
+  --images-dir dataset/synthetic/images \
+  --annotations-dir dataset/synthetic/annotations \
+  --name sketch_00010 --output dataset/synthetic/vis
+python evaluation/evaluate_synthetic.py \
+  --annotations-dir dataset/synthetic/annotations \
+  --splits dataset/synthetic/splits/train.txt
+
+# New in this update:
+python preprocessing/extract_text_tokens.py \
+  --images-dir dataset/synthetic/images \
+  --annotations-dir dataset/synthetic/annotations
+python scripts/train_detector.py --data-root dataset/synthetic --epochs 1 --batch-size 2
+python evaluation/sequence_metrics.py \
+  --annotations-dir dataset/synthetic/annotations \
+  --splits dataset/synthetic/splits/test.txt \
+  --predictions predictions.tsv
+\end{verbatim}
+
+Generated visualizations can be included in the appendix; see \texttt{docs/example.png} for style reference.
+
+\section{Data Visualization}
+We include dataset summary plots generated from the synthetic annotations:
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.85\linewidth]{figs/primitive_types.png}
+  \caption{Distribution of primitive types in the split.}\label{fig:types}
+\end{figure}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.85\linewidth]{figs/primitives_per_image.png}
+  \caption{Per-image primitive counts.}\label{fig:counts}
+\end{figure}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.85\linewidth]{figs/bbox_area_hist.png}
+  \caption{Bounding-box area distribution (normalized by image area).}\label{fig:areas}
+\end{figure}
+
+\section{Implemented Updates aligned with Planned Work}
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Expanded primitives}: Added \texttt{arrow} and \texttt{text} tokens to the synthetic generator, updated visualization.
+  \item \textbf{OCR integration}: Added a utility to extract text tokens via Tesseract and store them next to annotations.
+  \item \textbf{Detector baseline}: Provided a minimal training script (Faster R-CNN via torchvision) to train on synthetic data.
+  \item \textbf{Metrics}: Added precision/recall/F1 utilities and sequence-level accuracy (exact match, char accuracy).
+  \item \textbf{Program serialization}: Synthetic annotations now include a \texttt{program} string for encoder--decoder evaluation.
+\end{itemize}
+
+\section{Planned Work}
+\begin{itemize}[leftmargin=*]
+  \item Expand primitive set (arrows, dimensions-as-text tokens) and OCR integration.
+  \item Train a detector baseline (ViT/DETR) on synthetic data; add metrics (precision/recall/F1).
+  \item Integrate encoder--decoder path for program reconstruction; evaluate sequence accuracy.
+\end{itemize}
+
+\end{document}
+
+

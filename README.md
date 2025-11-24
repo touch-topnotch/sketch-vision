@@ -32,12 +32,15 @@ dataset/
 preprocessing/
   preprocess_images.py   # Normalization & augmentation
   convert_annotations.py # Convert raw labels into schema
+  generate_synthetic.py  # Create synthetic sketches + JSON annotations
+  visualize_annotations.py # Overlay JSON primitives on images
 models/
   vision_encoder/        # ViT/DETR backbone configs
   primitive_detector/    # Training scripts
 evaluation/
   metrics.py             # IoU / precision / recall
   evaluate.py            # Benchmark pipeline
+  evaluate_synthetic.py  # Sanity stats on synthetic split
 ```
 
 ---
@@ -74,6 +77,41 @@ We provide metrics to benchmark detection and structured prediction:
 
 ---
 
+### Quickstart
+
+```bash
+# 1) Create a small synthetic dataset
+python preprocessing/generate_synthetic.py --output-dir dataset/synthetic --num-samples 100
+
+# 2) Visualize one sample's annotations
+python preprocessing/visualize_annotations.py \
+  --images-dir dataset/synthetic/images \
+  --annotations-dir dataset/synthetic/annotations \
+  --name sketch_00010 \
+  --output dataset/synthetic/vis
+
+# 3) Get basic stats on the synthetic train split
+python evaluation/evaluate_synthetic.py \
+  --annotations-dir dataset/synthetic/annotations \
+  --splits dataset/synthetic/splits/train.txt
+
+# 4) (New) Extract OCR tokens from images (requires Tesseract installed)
+python preprocessing/extract_text_tokens.py \
+  --images-dir dataset/synthetic/images \
+  --annotations-dir dataset/synthetic/annotations
+
+# 5) (New) Train a simple detector baseline (Faster R-CNN via torchvision)
+python scripts/train_detector.py --data-root dataset/synthetic --epochs 1 --batch-size 2
+
+# 6) (New) Evaluate sequence accuracy given predicted programs (TSV: name<TAB>program)
+python evaluation/sequence_metrics.py \
+  --annotations-dir dataset/synthetic/annotations \
+  --splits dataset/synthetic/splits/test.txt \
+  --predictions predictions.tsv
+```
+
+---
+
 ### Example Workflow
 
 ```bash
@@ -103,6 +141,12 @@ python evaluation/evaluate.py --split test
 - [ ] Release pretrained ViT/DETR baselines.
 - [ ] Integrate with CAD program generation pipelines.
 - [ ] Publish benchmark leaderboard.
+
+---
+
+### Figures
+
+See example figures in `docs` (`example.png`, `internvl.png`) and generated visualizations under `dataset/synthetic/vis/` after running the Quickstart.
 
 ---
 

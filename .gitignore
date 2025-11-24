@@ -3,9 +3,10 @@ dataset/
 # Latex         
 *.aux           
 *.synctex.gz   
-•.fdb_latexmk           
-•.fls           
-•.log
+*.fdb_latexmk           
+*.fls           
+*.log
+*.out
 
 # MacOS
 *.DS_STORE
